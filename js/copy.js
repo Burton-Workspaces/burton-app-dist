@@ -1,11 +1,9 @@
 (function () {
-  var buttons = document.querySelectorAll("[data-copy]");
+  var resetTimers = new WeakMap();
 
-  document.documentElement.dataset.copyReady = String(buttons.length);
-
-  if (!buttons.length) {
-    return;
-  }
+  document.documentElement.dataset.copyReady = String(
+    document.querySelectorAll("[data-copy]").length
+  );
 
   function setLabel(button, label) {
     var text = button.querySelector("[data-copy-text]");
@@ -114,37 +112,56 @@
     });
   }
 
-  buttons.forEach(function (button) {
+  function scheduleReset(button, idleLabel) {
+    var previous = resetTimers.get(button);
+
+    if (previous) {
+      window.clearTimeout(previous);
+    }
+
+    resetTimers.set(
+      button,
+      window.setTimeout(function () {
+        button.dataset.copyState = "";
+        setLabel(button, idleLabel);
+      }, 2000)
+    );
+  }
+
+  function burtonCopy(button) {
+    if (!button) {
+      return;
+    }
+
     var idleLabel = getIdleLabel(button);
-    var resetTimer = 0;
+    var value = button.getAttribute("data-copy") || "";
 
-    button.addEventListener("click", function (event) {
-      event.preventDefault();
+    function succeed() {
+      button.dataset.copyState = "success";
+      setLabel(button, button.getAttribute("data-copied-label") || "Copied");
+      scheduleReset(button, idleLabel);
+    }
 
-      var value = button.getAttribute("data-copy") || "";
+    function fail() {
+      button.dataset.copyState = "error";
+      setLabel(button, button.getAttribute("data-copy-failed-label") || "Failed");
+      scheduleReset(button, idleLabel);
+    }
 
-      function succeed() {
-        window.clearTimeout(resetTimer);
-        button.dataset.copyState = "success";
-        setLabel(button, button.getAttribute("data-copied-label") || "Copied");
-        resetTimer = window.setTimeout(function () {
-          button.dataset.copyState = "";
-          setLabel(button, idleLabel);
-        }, 2000);
-      }
+    selectNearbyCode(button);
+    copyValue(value).then(succeed).catch(fail);
+  }
 
-      function fail() {
-        window.clearTimeout(resetTimer);
-        button.dataset.copyState = "error";
-        setLabel(button, button.getAttribute("data-copy-failed-label") || "Failed");
-        resetTimer = window.setTimeout(function () {
-          button.dataset.copyState = "";
-          setLabel(button, idleLabel);
-        }, 2000);
-      }
+  window.burtonCopy = burtonCopy;
 
-      selectNearbyCode(button);
-      copyValue(value).then(succeed).catch(fail);
-    });
+  document.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-copy]");
+
+    if (!button) {
+      return;
+    }
+
+    event.preventDefault();
+    burtonCopy(button);
   });
 })();

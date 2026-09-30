@@ -140,6 +140,9 @@ html[data-brand="burton"][data-theme="dark"] .repo-qr {
 }
 
 .copy-button {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
