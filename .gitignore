@@ -1,0 +1,5 @@
+# Never publish fdroidserver secrets if they land here by mistake
+config.yml
+keystore.jks
+*.jks
+*.keystore
