@@ -129,9 +129,11 @@
   }
 
   function burtonCopy(button) {
-    if (!button) {
+    if (!button || button.dataset.copyLock === "1") {
       return;
     }
+
+    button.dataset.copyLock = "1";
 
     var idleLabel = getIdleLabel(button);
     var value = button.getAttribute("data-copy") || "";
@@ -149,7 +151,11 @@
     }
 
     selectNearbyCode(button);
-    copyValue(value).then(succeed).catch(fail);
+    copyValue(value)
+      .then(succeed, fail)
+      .then(function () {
+        button.dataset.copyLock = "";
+      });
   }
 
   window.burtonCopy = burtonCopy;
